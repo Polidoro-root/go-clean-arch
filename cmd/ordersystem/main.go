@@ -15,11 +15,14 @@ import (
 	"github.com/Polidoro-root/go-expert-classes/18_clean_architecture/internal/infra/grpc/service"
 	"github.com/Polidoro-root/go-expert-classes/18_clean_architecture/internal/infra/web/webserver"
 	"github.com/Polidoro-root/go-expert-classes/18_clean_architecture/pkg/events"
+	migrate "github.com/golang-migrate/migrate/v4"
 	"github.com/streadway/amqp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/golang-migrate/migrate/v4/database/mysql"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 func main() {
@@ -36,6 +39,20 @@ func main() {
 	}
 
 	defer db.Close()
+
+	driver, err := mysql.WithInstance(db, &mysql.Config{})
+
+	if err != nil {
+		panic(err)
+	}
+
+	m, err := migrate.NewWithDatabaseInstance("file://../../sql/migrations", configs.DBName, driver)
+
+	if err != nil {
+		panic(err)
+	}
+
+	m.Up()
 
 	rabbitMQChannel := getRabbitMQChannel("amqp://guest:guest@localhost:5672")
 
